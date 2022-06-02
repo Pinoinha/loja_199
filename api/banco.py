@@ -27,7 +27,10 @@ class Banco(object):
         '''Lista os colaboradores da loja.'''
         c = self.conn.cursor()
 
-        c.execute("SELECT matricula, tipoColaborador, nome FROM Colaborador")
+        c.execute(
+            "SELECT matricula, tipoColaborador, nome
+            FROM Colaborador;"
+        )
 
         return list(map(dict, c.fetchall()))
 
@@ -39,7 +42,7 @@ class Banco(object):
             "SELECT idVenda, dataVenda, valorTotal, matricula, Colaborador.nome
             FROM Venda
             INNER JOIN Colaborador
-            ON Venda.matricula = Colaborador.matricula"
+            ON Venda.matricula = Colaborador.matricula;"
         )
         return list(map(dict, c.fetchall()))
 
@@ -53,7 +56,7 @@ class Banco(object):
             INNER JOIN ProdutoVenda AS pv
             ON Produto.idProduto = pv.idProduto
             INNER JOIN Venda as v
-            ON pv.idVenda = v.idVenda"
+            ON pv.idVenda = v.idVenda;"
         )
         return list(map(dict, c.fetchall()))
 
@@ -64,14 +67,28 @@ class Banco(object):
         try: 
             c.execute(
                 f"SELECT matricula, idVenda
-                FROM Venda
-                WHERE idVenda={idVenda}"
+                 FROM Venda
+                 WHERE idVenda={idVenda};"
             )
-            return c.fetchone()
         except ProgrammingError as error:
             print(error)
-            print(f'Venda {idVenda} não encontrada.')
+            print(f"Venda {idVenda} não encontrada.")
             sys.exit(1)
+        else:
+            return c.fetchone()
 
-    def deleta_venda(self):
+    def deleta_venda(self, idVenda):
         '''Deleta uma venda do banco de dados.'''
+        c = self.conn.cursor()
+
+        try:
+            c.execute(
+                f"DELETE FROM Venda
+                  WHERE idVenda = {idVenda}"
+            )
+        except ProgrammingError as error:
+            print(error)
+            print(f"Venda {idVenda} não encontrada.")
+            sys.exit(1)
+        else:
+            print("Venda deletada com sucesso.")
