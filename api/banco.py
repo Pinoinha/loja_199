@@ -23,18 +23,23 @@ class Banco(object):
             host = self.host, port = self.port
         )
 
-    def lista_colaboradores(self):
+    def get_colaboradores(self):
         '''Lista os colaboradores da loja.'''
         c = self.conn.cursor()
 
-        c.execute(
-            "SELECT matricula, tipoColaborador, nome
-            FROM Colaborador;"
-        )
+        try:
+            c.execute(
+                "SELECT *
+                 FROM Colaborador;"
+            )
+        except ProgrammingError as error:
+            print(error)
+            print(f"Nenhum colaborador encontrado.")
+            sys.exit(1)
 
         return list(map(dict, c.fetchall()))
 
-    def lista_vendas(self):
+    def get_vendas(self):
         '''Lista as vendas da loja.'''
         c = self.conn.cursor()
         
@@ -46,7 +51,7 @@ class Banco(object):
         )
         return list(map(dict, c.fetchall()))
 
-    def lista_produtos(self):
+    def get_produtos(self):
         '''Lista os produtos na loja, junto com a quantidade em estoque de cada um.'''
         c = self.conn.cursor()
 
@@ -77,6 +82,8 @@ class Banco(object):
         else:
             return c.fetchone()
 
+    # def add_venda(self):
+    
     def deleta_venda(self, idVenda):
         '''Deleta uma venda do banco de dados.'''
         c = self.conn.cursor()
@@ -92,3 +99,31 @@ class Banco(object):
             sys.exit(1)
         else:
             print("Venda deletada com sucesso.")
+
+    # def altera_venda(self)
+
+    def acha_duplicata(self, id_produto):
+        '''Encontra produtos duplicados no estoque.'''
+        c = self.conn.cursor()
+
+        try:
+            c.execute(
+            	f"SELECT idProduto
+            	  FROM Produto
+            	  WHERE idProduto = {id_produto}"
+            )
+        except ProgrammingError as error:
+            print(error)
+            print(f"Venda {idVenda} não encontrada.")
+            sys.exit(1)
+        else:
+            return c.fetchone()
+
+    def add_produto(self, id_produto, nome_produto, preco_produto, qtd_produto):
+        '''Adiciona produto no estoque.'''
+        c = self.conn.cursor()
+
+        duplicata = acha_duplicata(id_produto)
+
+        if duplicata is not None:
+            print(f"Produto com id {id_produto} já existe.")
