@@ -1,10 +1,12 @@
 import sys
 import os
+from datetime import datetime, timezone, timedelta
+from uuid import uuid4
 import psycopg2
 
 if __name__ == "__main__":
     print("Este arquivo é um módulo, e portanto não deve ser executado.")
-    sys.exit(1)
+    sys.exit(0)
 
 class Banco(object):
     def __init__(self, filename, **kwargs):
@@ -24,106 +26,154 @@ class Banco(object):
         )
 
     def get_colaboradores(self):
-        '''Lista os colaboradores da loja.'''
+        """Lista os colaboradores da loja."""
         c = self.conn.cursor()
 
-        try:
-            c.execute(
-                "SELECT *
-                 FROM Colaborador;"
-            )
-        except ProgrammingError as error:
-            print(error)
-            print(f"Nenhum colaborador encontrado.")
-            sys.exit(1)
+        c.execute(
+            """
+            SELECT *
+            FROM Colaborador;
+            """
+        )
 
-        return list(map(dict, c.fetchall()))
+        colaboradores = c.fetchall()
+
+        if colaboradores is not None:
+            return list(map(dict, c.fetchall()))
+
+        raise ProgrammingError("Nenhum colaborador encontrado.")
 
     def get_vendas(self):
-        '''Lista as vendas da loja.'''
+        """Lista as vendas da loja."""
         c = self.conn.cursor()
         
         c.execute(
-            "SELECT idVenda, dataVenda, valorTotal, matricula, Colaborador.nome
+            """
+            SELECT idVenda, dataVenda, valorTotal, matricula, Colaborador.nome
             FROM Venda
             INNER JOIN Colaborador
-            ON Venda.matricula = Colaborador.matricula;"
+            ON Venda.matricula = Colaborador.matricula;
+            """
         )
         return list(map(dict, c.fetchall()))
-
-    def get_produtos(self):
-        '''Lista os produtos na loja, junto com a quantidade em estoque de cada um.'''
+    
+    def consulta_venda(self, idVenda):
+        """Verifica se uma venda foi registrada no banco de dados a partir de sua identificação."""
         c = self.conn.cursor()
 
         c.execute(
-            "SELECT idProduto, nome, preco, quantidadeEstoque, Venda.idVenda, Venda.dataVenda
+            """
+            SELECT matricula, idVenda
+            FROM Venda
+            WHERE idVenda = %s;
+            """,
+            (idVenda,)
+        )
+
+        except ProgrammingError as error:
+            print(error)
+            print(f"Venda {idVenda} não encontrada.")
+        else:
+            return c.fetchone()
+
+    def add_venda(self, matriculaColaborador, valor, quantidade, **idQtdProdutos):
+        c = self.conn.cursor()
+        
+        idVenda = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
+        dataVenda = datetime.now(timezone(timedelta(hours=-3)))
+
+        for idProduto, quantidade in idQtdProdutos.items():
+            if verifica_qtd(idProduto, quantidade) is not None:
+            	c.execute(
+                    """
+                    INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
+                    VALUES (%s, %s, %s)
+                    """,
+                    (idVenda, dataVenda, valor, matriculaColaborador)
+                )
+            else:
+                print("")
+        
+    # def altera_venda(self)
+    
+    def deleta_venda(self, idVenda):
+        """Deleta uma venda do banco de dados."""
+        c = self.conn.cursor()
+
+        c.execute(
+            """
+            DELETE FROM Venda
+            WHERE idVenda = %s
+            """,
+            (idVenda,)
+        )
+        self.conn.commit()
+
+    def verifica_qtd(self, idProduto, quantidade):
+        """Verifica se há, no banco de dados, uma quantidade suficiente de um determinado produto."""
+        c = self.conn.cursor()
+
+        c.execute(
+            """
+            SELECT idProduto, quantidade FROM ProdutoVenda
+            WHERE idProduto = %s AND
+                  quantidade >= %s
+            """,
+            (idProduto, quantidade)
+        )
+        
+        produto_exite = True if c.fetchall() is not None else False
+
+        if produto_existe:
+            return list(map(dict, c.fetchall()))
+
+        raise ProgrammingError(f"Produto com {idProduto} não encontrado.")
+
+    def get_produtos(self):
+        """Lista os produtos na loja, junto com a quantidade em estoque de cada um."""
+        c = self.conn.cursor()
+
+        c.execute(
+            """
+            SELECT idProduto, nome, preco, quantidadeEstoque, Venda.idVenda, Venda.dataVenda
             FROM Produto
             INNER JOIN ProdutoVenda AS pv
             ON Produto.idProduto = pv.idProduto
             INNER JOIN Venda as v
-            ON pv.idVenda = v.idVenda;"
+            ON pv.idVenda = v.idVenda;
+            """
         )
+        
         return list(map(dict, c.fetchall()))
 
-    def consulta_venda(self, idVenda):
-        '''Verifica se uma venda foi registrada no banco de dados a partir de sua identificação.'''
+    def add_produto(self, idProduto, nomeProduto, precoProduto, qtdProduto):
+        """Adiciona produto no estoque."""
         c = self.conn.cursor()
 
-        try: 
-            c.execute(
-                f"SELECT matricula, idVenda
-                 FROM Venda
-                 WHERE idVenda={idVenda};"
-            )
-        except ProgrammingError as error:
-            print(error)
-            print(f"Venda {idVenda} não encontrada.")
-            sys.exit(1)
-        else:
-            return c.fetchone()
+        if acha_duplicata(idProduto) is not None:
+            raise Exception(f"Produto com id {id_produto} já existe.")
 
-    # def add_venda(self):
+        c.execute(
+            """
+            INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (idVenda, dataVenda, valor, matriculaColaborador)
+        )
+        
+        self.conn.commit()
+        
+    def acha_duplicata(self, idProduto):
+        """Encontra produtos duplicados no estoque."""
+        c = self.conn.cursor()
+
+        c.execute(
+            """
+            SELECT idProduto
+            FROM Produto
+            WHERE idProduto = %s
+            """,
+            idProduto
+        )
     
-    def deleta_venda(self, idVenda):
-        '''Deleta uma venda do banco de dados.'''
-        c = self.conn.cursor()
-
-        try:
-            c.execute(
-                f"DELETE FROM Venda
-                  WHERE idVenda = {idVenda}"
-            )
-        except ProgrammingError as error:
-            print(error)
-            print(f"Venda {idVenda} não encontrada.")
-            sys.exit(1)
-        else:
-            print("Venda deletada com sucesso.")
-
-    # def altera_venda(self)
-
-    def acha_duplicata(self, id_produto):
-        '''Encontra produtos duplicados no estoque.'''
-        c = self.conn.cursor()
-
-        try:
-            c.execute(
-            	f"SELECT idProduto
-            	  FROM Produto
-            	  WHERE idProduto = {id_produto}"
-            )
-        except ProgrammingError as error:
-            print(error)
-            print(f"Venda {idVenda} não encontrada.")
-            sys.exit(1)
-        else:
-            return c.fetchone()
-
-    def add_produto(self, id_produto, nome_produto, preco_produto, qtd_produto):
-        '''Adiciona produto no estoque.'''
-        c = self.conn.cursor()
-
-        duplicata = acha_duplicata(id_produto)
-
-        if duplicata is not None:
-            print(f"Produto com id {id_produto} já existe.")
+        return c.fetchone()
