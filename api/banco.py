@@ -69,12 +69,8 @@ class Banco(object):
             """,
             (idVenda,)
         )
-
-        except ProgrammingError as error:
-            print(error)
-            print(f"Venda {idVenda} não encontrada.")
-        else:
-            return c.fetchone()
+        
+        return c.fetchone()
 
     def add_venda(self, matriculaColaborador, valor, quantidade, **idQtdProdutos):
         c = self.conn.cursor()
