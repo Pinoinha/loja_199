@@ -38,10 +38,10 @@ class Banco(object):
 
         colaboradores = c.fetchall()
 
-        if colaboradores is not None:
-            return list(map(dict, c.fetchall()))
-
-        raise ProgrammingError("Nenhum colaborador encontrado.")
+        if colaboradores is None:
+            raise ProgrammingError("Nenhum colaborador encontrado.")
+        
+        return list(map(dict, c.fetchall()))
 
     def get_vendas(self):
         """Lista as vendas da loja."""
@@ -77,9 +77,11 @@ class Banco(object):
         
         idVenda = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
         dataVenda = datetime.now(timezone(timedelta(hours=-3)))
-
+        
         for idProduto, quantidade in idQtdProdutos.items():
             if verifica_qtd(idProduto, quantidade) is not None:
+                # isso está errado! precisa verificar *todos* os itens antes
+                # TODO: consertar
             	c.execute(
                     """
                     INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
@@ -118,12 +120,12 @@ class Banco(object):
             (idProduto, quantidade)
         )
         
-        produto_exite = True if c.fetchall() is not None else False
+        produto_existe = c.fetchall() is not None
 
-        if produto_existe:
-            return list(map(dict, c.fetchall()))
-
-        raise ProgrammingError(f"Produto com {idProduto} não encontrado.")
+        if not produto_existe:
+            raise ProgrammingError(f"Produto com {idProduto} não encontrado.")
+        
+        return list(map(dict, c.fetchall()))
 
     def get_produtos(self):
         """Lista os produtos na loja, junto com a quantidade em estoque de cada um."""
@@ -146,7 +148,7 @@ class Banco(object):
         """Adiciona produto no estoque."""
         c = self.conn.cursor()
 
-        if acha_duplicata(idProduto) is not None:
+        if acha_duplicata(idProduto):
             raise Exception(f"Produto com id {id_produto} já existe.")
 
         c.execute(
@@ -172,4 +174,4 @@ class Banco(object):
             idProduto
         )
     
-        return c.fetchone()
+        return c.fetchone() is not None
