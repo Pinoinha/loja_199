@@ -67,14 +67,14 @@ class Banco(object):
             FROM Venda
             WHERE idVenda = %s;
             """,
-            (idVenda,)
+            (idVenda)
         )
         
         return c.fetchone()
 
     def add_venda(self, matriculaColaborador, valor, quantidade, **idQtdProdutos):
         c = self.conn.cursor()
-        
+        #TODO: Verify
         idVenda = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
         dataVenda = datetime.now(timezone(timedelta(hours=-3)))
         
@@ -89,21 +89,27 @@ class Banco(object):
                     """,
                     (idVenda, dataVenda, valor, matriculaColaborador)
                 )
-            else:
-                print("")
+                
+               self.conn.commit()
+               
+              else:
+                print(f"Não há {quantidade} de produtos com o id {idProduto} dísponíveis.")
         
-    def altera_venda(self):
+    def altera_venda(self, idVenda, matriculaColaborador, dataVenda, valor, quantidade):
         """Altera uma venda do banco de dados."""
         c = self.conn.cursor()
         
         c.execute(
-            """EDIT FROM Venda
+            """EDIT idVenda, matriculaColaborador, dataVenda, valor, quantidade
+            FROM Venda
             WHERE idVenda = %s
             """,
-            (idVenda,)
+            (idVenda, matriculaColaborador, dataVenda, valor, quantidade)
         )
         self.conn.commit() 
-    
+        
+        #TODO: Verify
+        
     def deleta_venda(self, idVenda):
         """Deleta uma venda do banco de dados."""
         c = self.conn.cursor()
@@ -113,7 +119,7 @@ class Banco(object):
             DELETE FROM Venda
             WHERE idVenda = %s
             """,
-            (idVenda,)
+            (idVenda)
         )
         self.conn.commit()
 
@@ -133,7 +139,7 @@ class Banco(object):
         produto_existe = c.fetchall() is not None
 
         if not produto_existe:
-            raise ProgrammingError(f"Produto com {idProduto} não encontrado.")
+            raise ProgrammingError(f"Produto com id {idProduto} não encontrado.")
         
         return list(map(dict, c.fetchall()))
 
@@ -181,7 +187,7 @@ class Banco(object):
             FROM Produto
             WHERE idProduto = %s
             """,
-            idProduto
+            (idProduto)
         )
     
         return c.fetchone() is not None
