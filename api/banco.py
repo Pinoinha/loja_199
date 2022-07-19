@@ -92,7 +92,17 @@ class Banco(object):
             else:
                 print("")
         
-    # def altera_venda(self)
+    def altera_venda(self):
+        """Altera uma venda do banco de dados."""
+        c = self.conn.cursor()
+        
+        c.execute(
+            """EDIT FROM Venda
+            WHERE idVenda = %s
+            """,
+            (idVenda,)
+        )
+        self.conn.commit() 
     
     def deleta_venda(self, idVenda):
         """Deleta uma venda do banco de dados."""
