@@ -41,42 +41,32 @@ class Colaborador(Handler):
         "type": "object",
         "title": "Inserção de Colaborador via POST.",
         "description": "Informação de um Colaborador a ser adicionada.",
+        #verify property
         "properties": {
-            "matricula": {
+            "id_colaborador": {
+                "type": "integer",
+                "description": "Identificação única do colaborador no banco de dados",
+                "length": 6
+            },
+            "nome_colaborador": {
                 "type": "string",
-                "description": "Matrícula do colaborador"
+                "description": "O nome do colaborador",
+                "minLength": 1
             },
-            "nome": {
-                "type": "string",
-                "description": "Nome completo do colaborador"
-            },
-            "dataAdmissao": {
-                "type": "date",
-                "description": "Data de admissão do colaborador na empresa"
-            },
-            "salarioBruto": {
-                "type": "money",
-                "description": "Salário bruto do colaborador"
-            },
-            "salarioLiquido": {
-                "type": "money",
-                "description": "Salário líquido do colaborador"
-p            },
-            "percentualComissao": {
-                "type": "float",
-                "description": "Percentual de comissão que o colaborador recebe a cada venda"
-            },
-            "tipoColaborador": {
-                "type": "attribute",
-                "description": "Tipo do colaborador"
-            },
-            "required": ["matricula"]
         }
+        "required": ["id_colaborador", "nome_colaborador"]
     }
-
+    
     def on_get(self, req, resp):
         resp.media = self.db.get_colaboradores()
 
+<<<<<<< HEAD
+=======
+    #verify
+    def on_post(self, req, resp):
+        resp.media = self.db.add_colaborador()
+
+>>>>>>> f23e5b569cd46920572211b44a5fc2aeff06eb91
 class Produto(Handler):
     desc = "Classe para manipulações na tabela Produto."
     usage = "GET retorna todos, POST cria um"
@@ -107,30 +97,46 @@ class Produto(Handler):
     def on_get(self, req, resp):
         resp.media = self.db.get_produtos()
 
-    # TODO
+    #verify
     def on_post(self, req, resp):
-        pass
+        resp.media = self.db.add_produtos()
 
 class Venda(Handler):
     desc = "Classe para manipulações na tabela Venda."
     usage = "GET retorna todas, POST cria uma, PUT atualiza uma"
     route = "/venda"
-
     post_schema = {
         "type": "object",
-        "title": "Criação de uma venda através do POST"
+        "title": "Inserção de venda via POST.",
+        "description": "Informação de uma venda a ser adicionada.",
         "properties": {
-           "idVenda": {
-               "type": "integer",
-               "description": "Identificação única da venda no banco de dados",
-               "length": 6
-           }
+            "idVenda": {
+                "type": "integer",
+                "description": "Identificação única da venda no banco de dados",
+                "length": 6
+            },
+            "dataVenda": {
+                "type": "date",
+                "description": "A data em que a venda ocorreu",
+            },
+            "valorTotal": {
+                "type": "money",
+                "description": "O valor total da venda",
+            },
+            "matricula": {
+                "type": "integer",
+                "description": "O id do colaborador associado à venda",
+            },
         }
+        "required": ["idVenda, dataVenda, valorTotal, matricula"]
     }
-
+    
     def on_get(self, req, resp):
         resp.media = self.db.get_vendas()
 
-    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
-        pass
+        resp.media = self.db.add_vendas()
+    
+    def on_put(self, req, resp):
+        resp.media = self.db.altera_venda()
+    #TODO: Deal with delete function
