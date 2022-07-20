@@ -41,15 +41,41 @@ class Colaborador(Handler):
         "type": "object",
         "title": "Inserção de Colaborador via POST.",
         "description": "Informação de um Colaborador a ser adicionada.",
-        # TODO: property
+        "properties": {
+            "matricula": {
+                "type": "string",
+                "description": "Matrícula do colaborador"
+            },
+            "nome": {
+                "type": "string",
+                "description": "Nome completo do colaborador"
+            },
+            "dataAdmissao": {
+                "type": "date",
+                "description": "Data de admissão do colaborador na empresa"
+            },
+            "salarioBruto": {
+                "type": "money",
+                "description": "Salário bruto do colaborador"
+            },
+            "salarioLiquido": {
+                "type": "money",
+                "description": "Salário líquido do colaborador"
+p            },
+            "percentualComissao": {
+                "type": "float",
+                "description": "Percentual de comissão que o colaborador recebe a cada venda"
+            },
+            "tipoColaborador": {
+                "type": "attribute",
+                "description": "Tipo do colaborador"
+            },
+            "required": ["matricula"]
+        }
     }
 
     def on_get(self, req, resp):
         resp.media = self.db.get_colaboradores()
-
-    # TODO
-    def on_post(self, req, resp):
-        pass
 
 class Produto(Handler):
     desc = "Classe para manipulações na tabela Produto."
@@ -58,9 +84,9 @@ class Produto(Handler):
 
     post_schema = {
         "type": "object",
-        "title": "Criação de um Produto no banco de dados via POST."
+        "title": "Criação de um Produto no banco de dados via POST.",
         "properties": {
-            "id_produto": {
+            "idProduto": {
                 "type": "integer",
                 "description": "Identificação única do produto no estoque",
                 "length": 6
@@ -74,7 +100,7 @@ class Produto(Handler):
                 "type": "money",
                 "description": "O preço associado ao produto",
             },
-        }
+        },
         "required": ["id_produto", "nome", "preco"]
     }
 
@@ -88,4 +114,23 @@ class Produto(Handler):
 class Venda(Handler):
     desc = "Classe para manipulações na tabela Venda."
     usage = "GET retorna todas, POST cria uma, PUT atualiza uma"
-    route = "/produto"
+    route = "/venda"
+
+    post_schema = {
+        "type": "object",
+        "title": "Criação de uma venda através do POST"
+        "properties": {
+           "idVenda": {
+               "type": "integer",
+               "description": "Identificação única da venda no banco de dados",
+               "length": 6
+           }
+        }
+    }
+
+    def on_get(self, req, resp):
+        resp.media = self.db.get_vendas()
+
+    @jsonschema.validate(post_schema)
+    def on_post(self, req, resp):
+        pass
