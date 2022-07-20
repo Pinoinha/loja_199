@@ -100,9 +100,10 @@ class Banco(object):
         c = self.conn.cursor()
         
         c.execute(
-            """EDIT idVenda, matriculaColaborador, dataVenda, valor, quantidade
+            """EDIT matriculaColaborador, dataVenda, valor, quantidade
             FROM Venda
             WHERE idVenda = %s
+            VALUES (%s, %s, %s, %s)
             """,
             (idVenda, matriculaColaborador, dataVenda, valor, quantidade)
         )
