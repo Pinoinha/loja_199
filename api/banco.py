@@ -42,6 +42,23 @@ class Banco(object):
             raise ProgrammingError("Nenhum colaborador encontrado.")
         
         return list(map(dict, c.fetchall()))
+    
+     def add_colaboradores(self, id_colaborador, nome_colaborador):
+        """Adiciona colaborador no banco de dados."""
+        c = self.conn.cursor()
+
+        if acha_duplicata_colaborador(id_colaborador):
+            raise Exception(f"Colaborador com id {id_colaborador} já existe.")
+
+        c.execute(
+            """
+            INSERT INTO Colaborador (id_colaborador, nome_colaborador)
+            VALUES (%s, %s)
+            """,
+            (id_colaborador, nome_colaborador)
+        )
+        
+        self.conn.commit()
 
     def get_vendas(self):
         """Lista as vendas da loja."""
@@ -167,13 +184,13 @@ class Banco(object):
 
         if acha_duplicata(idProduto):
             raise Exception(f"Produto com id {id_produto} já existe.")
-
+        #verify
         c.execute(
             """
-            INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO Produto (idProduto, nomeProduto, precoProduto)
+            VALUES (%s, %s, %s)
             """,
-            (idVenda, dataVenda, valor, matriculaColaborador)
+            (idProduto, nomeProduto, precoProduto)
         )
         
         self.conn.commit()
@@ -189,6 +206,21 @@ class Banco(object):
             WHERE idProduto = %s
             """,
             (idProduto)
+        )
+    
+        return c.fetchone() is not None
+    
+    def acha_duplicata_colaborador(self, id_colaborador):
+        """Encontra colaborador duplicado no banco de dados."""
+        c = self.conn.cursor()
+
+        c.execute(
+            """
+            SELECT id_colaborador
+            FROM Colaborador
+            WHERE id_colaborador = %s
+            """,
+            (id_colaborador)
         )
     
         return c.fetchone() is not None
