@@ -43,7 +43,7 @@ class Banco(object):
         
         return list(map(dict, c.fetchall()))
     
-     def add_colaboradores(self, id_colaborador, nome_colaborador):
+     def add_colaborador(self, id_colaborador, nome_colaborador):
         """Adiciona colaborador no banco de dados."""
         c = self.conn.cursor()
 
