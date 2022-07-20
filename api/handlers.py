@@ -41,15 +41,28 @@ class Colaborador(Handler):
         "type": "object",
         "title": "Inserção de Colaborador via POST.",
         "description": "Informação de um Colaborador a ser adicionada.",
-        # TODO: property
+        #verify property
+        "properties": {
+            "id_colaborador": {
+                "type": "integer",
+                "description": "Identificação única do colaborador no banco de dados",
+                "length": 6
+            },
+            "nome_colaborador": {
+                "type": "string",
+                "description": "O nome do colaborador",
+                "minLength": 1
+            },
+        }
+        "required": ["id_colaborador", "nome_colaborador"]
     }
-
+    
     def on_get(self, req, resp):
         resp.media = self.db.get_colaboradores()
 
-    # TODO
+    #verify
     def on_post(self, req, resp):
-        pass
+        resp.media = self.db.add_colaborador()
 
 class Produto(Handler):
     desc = "Classe para manipulações na tabela Produto."
@@ -81,11 +94,46 @@ class Produto(Handler):
     def on_get(self, req, resp):
         resp.media = self.db.get_produtos()
 
-    # TODO
+    #verify
     def on_post(self, req, resp):
-        pass
+        resp.media = self.db.add_produtos()
 
 class Venda(Handler):
     desc = "Classe para manipulações na tabela Venda."
     usage = "GET retorna todas, POST cria uma, PUT atualiza uma"
     route = "/produto"
+    #Verify
+    post_schema = {
+        "type": "object",
+        "title": "Inserção de venda via POST.",
+        "description": "Informação de uma venda a ser adicionada.",
+        "properties": {
+            "idVenda": {
+                "type": "integer",
+                "description": "Identificação única da venda no banco de dados",
+                "length": 6
+            },
+            "dataVenda": {
+                "type": "date",
+                "description": "A data em que a venda ocorreu",
+            },
+            "valorTotal": {
+                "type": "money",
+                "description": "O valor total da venda",
+            },
+            "matricula": {
+                "type": "integer",
+                "description": "O id do colaborador associado à venda",
+            },
+        }
+        "required": ["idVenda, dataVenda, valorTotal, matricula"]
+    }
+    def on_get(self, req, resp):
+        resp.media = self.db.get_vendas()
+
+    def on_post(self, req, resp):
+        resp.media = self.db.add_vendas()
+    
+    def on_put(self, req, resp):
+        resp.media = self.db.altera_venda()
+    #TODO: Deal with delete function
