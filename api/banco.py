@@ -15,9 +15,9 @@ class Banco(object):
         self.host = kwargs.get("host") or "127.0.0.1"
         self.port = kwargs.get("port") or "5432"
         
-        if not os.path.isfile(filename):
-            print(f"Arquivo {filename} não existe.")
-            sys.exit(1)
+        #if not os.path.isfile(filename):
+        #    print(f"Arquivo {filename} não existe.")
+        #    sys.exit(1)
 
         self.filename = filename
         self.conn = psycopg2.connect(
@@ -29,86 +29,78 @@ class Banco(object):
         """Lista os colaboradores da loja."""
         c = self.conn.cursor()
 
-        c.execute(
-            """
-            SELECT *
-            FROM Colaborador;
-            """
-        )
+        c.execute("SELECT * FROM Colaborador;")
 
         colaboradores = c.fetchall()
 
         if colaboradores is None:
             raise ProgrammingError("Nenhum colaborador encontrado.")
         
-        return list(map(dict, c.fetchall()))
+        return colaboradores
+        
+    def acha_duplicata_colaborador(self, matricula):
+        """Encontra colaborador duplicado no banco de dados."""
+        c = self.conn.cursor()
+
+        c.execute("SELECT matricula FROM Colaborador WHERE matricula = %s", (matricula,))
     
-    def add_colaborador(self, idColaborador, nomeColaborador):
+        return c.fetchone() is not None
+    
+    def add_colaborador(self, matricula, nomeColaborador):
        """Adiciona colaborador no banco de dados."""
        c = self.conn.cursor()
 
-       if acha_duplicata_colaborador(idColaborador):
-           raise Exception(f"Colaborador com id {idColaborador} já existe.")
+       if self.acha_duplicata_colaborador(matricula):
+           raise Exception(f"Colaborador com id {matricula} já existe.")
 
-       c.execute(
-           """
-           INSERT INTO Colaborador (idColaborador, nomeColaborador)
-           VALUES (%s, %s)
-           """,
-           (idColaborador, nomeColaborador)
-       )
-       
-       self.conn.commit()
+       try:
+           c.execute("INSERT INTO Colaborador (matricula, nome) VALUES (%s, %s)", (matricula, nomeColaborador))
+           self.conn.commit()
+       except:
+           self.conn.rollback()
 
     def get_vendas(self):
         """Lista as vendas da loja."""
         c = self.conn.cursor()
         
-        c.execute(
-            """
-            SELECT idVenda, dataVenda, valorTotal, matricula, Colaborador.nome
-            FROM Venda
-            INNER JOIN Colaborador
-            ON Venda.matricula = Colaborador.matricula;
-            """
-        )
+        c.execute("SELECT matricula, idVenda, dataVenda, valorTotal FROM Venda INNER JOIN Colaborador ON Venda.matricula = Colaborador.matricula;")
         return list(map(dict, c.fetchall()))
     
     def consulta_venda(self, idVenda):
         """Verifica se uma venda foi registrada no banco de dados a partir de sua identificação."""
         c = self.conn.cursor()
 
-        c.execute(
-            """
-            SELECT matricula, idVenda
-            FROM Venda
-            WHERE idVenda = %s;
-            """,
-            (idVenda)
+        c.execute("SELECT matricula, idVenda FROM Venda WHERE idVenda = %s;", (idVenda)
         )
         
         return c.fetchone()
+    
+    def verifica_qtd(self, idProduto, quantidade):
+        """Verifica se há, no banco de dados, uma quantidade suficiente de um determinado produto."""
+        c = self.conn.cursor()
+
+        c.execute("SELECT idProduto, quantidadeVendida FROM ProdutoVenda WHERE idProduto = (%s) AND quantidadeVendida >= (%s)", (idProduto, quantidade))
+        
+        produtoExiste = c.fetchall() is not None
+
+        if not produtoExiste:
+            raise ProgrammingError(f"Produto com id {idProduto} não encontrado.")
+        
+        return produtoExiste
 
     def add_venda(self, matriculaColaborador, valorTotal, idQtdProdutos):
         c = self.conn.cursor()
         #TODO: Verify
         idVenda = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
         dataVenda = datetime.now(timezone(timedelta(hours=-3)))
-        
+
         for idProduto, quantidade in idQtdProdutos.items():
             ok = True
-            if verifica_qtd(idProduto, quantidade) is not None:
+            if self.verifica_qtd(idProduto, quantidade) is not None:
                 # isso está errado! precisa verificar *todos* os itens antes
                 # TODO: consertar
-            	#c.execute(
-                #    """
-                #    INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
-                #    VALUES (%s, %s, %s)
-                #    """,
-                #    (idVenda, dataVenda, valorTotal, matriculaColaborador)
-                #)
-                
-               self.conn.commit()
+                c.execute("INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula) VALUES (%s, %s, %s, %s)", (idVenda, dataVenda, valorTotal, matriculaColaborador))
+                self.conn.commit()
             else:
                 print(f"Não há {quantidade} produtos com o id {idProduto} dísponíveis.")
         
@@ -116,14 +108,7 @@ class Banco(object):
         """Altera uma venda do banco de dados."""
         c = self.conn.cursor()
         
-        c.execute(
-            """
-            EDIT matriculaColaborador, dataVenda, valor, quantidade
-            FROM Venda
-            WHERE idVenda = %s
-            VALUES (%s, %s, %s, %s)
-            """,
-            (idVenda, matriculaColaborador, dataVenda, valor, quantidade)
+        c.execute("EDIT matriculaColaborador, dataVenda, valor, quantidade FROM Venda WHERE idVenda = %s VALUES (%s, %s, %s, %s)", (idVenda, matriculaColaborador, dataVenda, valor, quantidade)
         )
         self.conn.commit() 
         
@@ -133,66 +118,28 @@ class Banco(object):
         """Deleta uma venda do banco de dados."""
         c = self.conn.cursor()
 
-        c.execute(
-            """
-            DELETE FROM Venda
-            WHERE idVenda = %s
-            """,
-            (idVenda)
-        )
+        c.execute("DELETE FROM Venda WHERE idVenda = %s", (idVenda))
         self.conn.commit()
-
-    def verifica_qtd(self, idProduto, quantidade):
-        """Verifica se há, no banco de dados, uma quantidade suficiente de um determinado produto."""
-        c = self.conn.cursor()
-
-        c.execute(
-            """
-            SELECT idProduto, quantidade FROM ProdutoVenda
-            WHERE idProduto = %s AND
-                  quantidade >= %s
-            """,
-            (idProduto, quantidade)
-        )
-        
-        produtoExiste = c.fetchall() is not None
-
-        if not produtoExiste:
-            raise ProgrammingError(f"Produto com id {idProduto} não encontrado.")
-        
-        return list(map(dict, c.fetchall()))
 
     def get_produtos(self):
         """Lista os produtos na loja, junto com a quantidade em estoque de cada um."""
         c = self.conn.cursor()
 
-        c.execute(
-            """
-            SELECT idProduto, nome, preco, quantidadeEstoque, Venda.idVenda, Venda.dataVenda
-            FROM Produto
-            INNER JOIN ProdutoVenda AS pv
-            ON Produto.idProduto = pv.idProduto
-            INNER JOIN Venda as v
-            ON pv.idVenda = v.idVenda;
-            """
-        )
+        c.execute("SELECT Produto.idProduto, nome, preco, quantidadeEstoque, v.idVenda, v.dataVenda FROM Produto INNER JOIN ProdutoVenda AS pv ON Produto.idProduto = pv.idProduto INNER JOIN Venda as v ON pv.idVenda = v.idVenda;")
         
         return list(map(dict, c.fetchall()))
 
-    def add_produto(self, idProduto, nomeProduto, precoProduto, qtdProduto):
+    def add_produto(self, nomeProduto, precoProduto):
         """Adiciona produto no estoque."""
         c = self.conn.cursor()
+        
+        idProduto = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
 
-        if acha_duplicata_produto(idProduto):
+        if self.acha_duplicata_produto(idProduto):
             raise Exception(f"Produto com id {idProduto} já existe.")
         
         c.execute(
-            """
-            INSERT INTO Produto (idProduto, nomeProduto, precoProduto)
-            VALUES (%s, %s, %s)
-            """,
-            (idProduto, nomeProduto, precoProduto)
-        )
+            "INSERT INTO Produto (idProduto, nome) VALUES (%s, %s)", (idProduto, nomeProduto))
         
         self.conn.commit()
         
@@ -201,27 +148,29 @@ class Banco(object):
         c = self.conn.cursor()
 
         c.execute(
-            """
-            SELECT idProduto
-            FROM Produto
-            WHERE idProduto = %s
-            """,
-            (idProduto,)
-        )
+            "SELECT idProduto FROM Produto WHERE idProduto = %s", (idProduto,))
     
         return c.fetchone() is not None
-    
-    def acha_duplicata_colaborador(self, idColaborador):
-        """Encontra colaborador duplicado no banco de dados."""
+
+    def get_presencas(self):
+        """Lista as presenças dos colaboradores da loja."""
         c = self.conn.cursor()
 
-        c.execute(
-            """
-            SELECT idColaborador
-            FROM Colaborador
-            WHERE idColaborador = %s
-            """,
-            (idColaborador,)
-        )
-    
-        return c.fetchone() is not None
+        c.execute("SELECT * FROM Presenca;")
+
+        presencas = c.fetchall()
+
+        if presencas is None:
+            raise ProgrammingError("Nenhuma presença encontrada.")
+        
+        return presencas
+
+    def add_presenca(self, matricula, nomeColaborador):
+       """Adiciona colaborador no banco de dados."""
+       dataPresenca = datetime.now(timezone(timedelta(hours=-3)))
+       
+       c = self.conn.cursor()
+
+       c.execute("INSERT INTO Presenca (matricula, dataHora, condicao) VALUES (%s, %s)", (matricula, dataPresenca, True))
+       
+       self.conn.commit()

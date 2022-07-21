@@ -26,28 +26,28 @@ class Colaborador(Handler):
         "title": "Inserção de Colaborador via POST.",
         "description": "Informação de um Colaborador a ser adicionada.",
         "properties": {
-            "id_colaborador": {
+            "matricula": {
                 "type": "integer",
                 "description": "Identificação única do colaborador no banco de dados",
                 "length": 6
             },
-            "nome_colaborador": {
+            "nome": {
                 "type": "string",
                 "description": "O nome do colaborador",
                 "minLength": 1
             },
         },
-        "required": ["id_colaborador", "nome_colaborador"]
+        "required": ["matricula", "nome"]
     }
     
     def on_get(self, req, resp):
         resp.media = self.db.get_colaboradores()
 
-    @jsonschema.validate(post_schema)
+#    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
         self.db.add_colaborador(
-            resp.media.get("idColaborador"),
-            resp.media.get("nomeColaborador")
+            req.media.get("matricula"),
+            req.media.get("nome")
         )
 
 class Produto(Handler):
@@ -80,63 +80,75 @@ class Produto(Handler):
     def on_get(self, req, resp):
         resp.media = self.db.get_produtos()
 
-    @jsonschema.validate(post_schema)
+#    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
-        self.db.add_produtos(
-            resp.media.get("idProduto"),
-            resp.media.get("nomeProduto"),
-            resp.media.get("precoProduto"),
-            resp.media.get("qtdProduto")
+        self.db.add_produto(
+            req.media.get("nomeProduto"),
+            req.media.get("precoProduto"),
         )
 
 class Venda(Handler):
     desc = "Classe para manipulações na tabela Venda."
-    usage = "GET retorna todas, POST cria uma, PUT atualiza uma"
+    usage = "GET retorna todas, POST cria uma"
     route = "/venda"
     
     post_schema = {
         "type": "object",
         "title": "Inserção de venda via POST.",
-        "description": "Informação de uma venda a ser adicionada.",
+        "description": "Venda realizada.",
         "properties": {
             "matricula": {
                 "type": "integer",
                 "description": "O id do colaborador associado à venda"
             },
             "valorTotal": {
-                "type": "money",
-                "description": "O valor total da venda"
-            },
-            "idQtdProdutos": {
-                "type": "object",
-                "description": "JSON que associa cada idProduto à quantidade vendida"
+                "type": "integer",
+                "description": "Valor total da venda realizada"
             }
-
         },
-        "required": ["idVenda, dataVenda, valorTotal, matricula"]
+        "required": ["matricula", "valorTotal"]
     }
     
     def on_get(self, req, resp):
         resp.media = self.db.get_vendas()
 
-    @jsonschema.validate(post_schema)
+#    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
         self.db.add_venda(
-            resp.media.get("matricula"),
-            resp.media.get("valorTotal"),
-            resp.media.get("idQtdProdutos")
-        )
-    
-    def on_put(self, req, resp):
-        self.db.altera_venda(
-            resp.media.get("idVenda"),
-            resp.media.get("matriculaColaborador"),
-            resp.media.get("dataVenda"),
-            resp.media.get("valor"),
-            resp.media.get("quantidade"),
+            req.media.get("matricula"),
+            req.media.get("valorTotal"),
+            req.media.get("idQtdProdutos")
         )
 
-    def on_delete(self, req, resp):
-        self.db.deleta_venda(
-            resp.media.get("idVenda")
+class Presenca(Handler):
+    desc = "Classe para manipulações na tabela Presenca."
+    usage = "GET retorna todas, POST cria uma"
+    route = "/presenca"
+    
+    post_schema = {
+        "type": "object",
+        "title": "Inserção de presença via POST.",
+        "description": "Presença de um funcionário.",
+        "properties": {
+            "matricula": {
+                "type": "integer",
+                "description": "O id do colaborador associado à venda"
+            },
+            "condicao": {
+                "type": "boolean",
+                "description": "Se o funcionário está presente ou não"
+            }
+
+        },
+        "required": ["matricula", "condicao"]
+    }
+    
+    def on_get(self, req, resp):
+        resp.media = self.db.get_presencas()
+
+#    @jsonschema.validate(post_schema)
+    def on_post(self, req, resp):
+        self.db.add_presenca(
+            req.media.get("matricula"),
+            req.media.get("condicao")
         )

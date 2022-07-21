@@ -18,21 +18,21 @@ CREATE TABLE IF NOT EXISTS Presenca (
 
 CREATE TABLE IF NOT EXISTS Venda (
     matricula VARCHAR(7),
-    idVenda INTEGER,
+    idVenda VARCHAR(7),
     dataVenda DATE,
     valorTotal NUMERIC(3,2),
     PRIMARY KEY(matricula, idVenda)
 );
 
 CREATE TABLE IF NOT EXISTS ProdutoVenda (
-    idVenda INTEGER,
-    idProduto INTEGER,
+    idVenda VARCHAR(7),
+    idProduto VARCHAR(7),
     quantidadeVendida INTEGER,
     PRIMARY KEY(idVenda, idProduto)
 );
 
 CREATE TABLE IF NOT EXISTS Produto (
-    idProduto INTEGER,
+    idProduto VARCHAR(7),
     nome VARCHAR(100),
     preco NUMERIC(3,2),
     quantidadeEstoque INTEGER,
