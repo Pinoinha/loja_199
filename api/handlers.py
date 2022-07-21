@@ -1,6 +1,7 @@
 import sys
 import falcon
 from falcon.media.validators import jsonschema as jsonschema
+import banco
 
 if __name__ == "__main__":
     print("Este arquivo é um módulo, e portanto não deve ser executado.")
@@ -15,23 +16,6 @@ class Handler(object):
     def __init__(self, database):
         self.db = database
 
-class Help(Handler):
-    desc = "Classe para documentação da API."
-    usage = "GET retorna informações sobre todos os handlers."
-    route = "/"
-    instances = {}
-
-    def add_handler(self, name, new_handler):
-        """Adiciona um handler à lista de instâncias do objeto"""
-        self.instances[name] = {
-            "descricao": new_handler.desc,
-            "uso": new_handler.usage,
-            "rota": new_handler.route
-        }
-
-    def on_get(self, req, resp):
-        resp.media = self.instances
-
 class Colaborador(Handler):
     desc = "Classe para manipulações na tabela Colaborador."
     usage = "GET retorna todos, POST cria um"
@@ -41,7 +25,6 @@ class Colaborador(Handler):
         "type": "object",
         "title": "Inserção de Colaborador via POST.",
         "description": "Informação de um Colaborador a ser adicionada.",
-        #verify property
         "properties": {
             "id_colaborador": {
                 "type": "integer",
@@ -53,20 +36,20 @@ class Colaborador(Handler):
                 "description": "O nome do colaborador",
                 "minLength": 1
             },
-        }
+        },
         "required": ["id_colaborador", "nome_colaborador"]
     }
     
     def on_get(self, req, resp):
         resp.media = self.db.get_colaboradores()
 
-<<<<<<< HEAD
-=======
-    #verify
+    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
-        resp.media = self.db.add_colaborador()
+        self.db.add_colaborador(
+            resp.media.get("idColaborador"),
+            resp.media.get("nomeColaborador")
+        )
 
->>>>>>> f23e5b569cd46920572211b44a5fc2aeff06eb91
 class Produto(Handler):
     desc = "Classe para manipulações na tabela Produto."
     usage = "GET retorna todos, POST cria um"
@@ -89,54 +72,71 @@ class Produto(Handler):
             "preco": {
                 "type": "money",
                 "description": "O preço associado ao produto",
-            },
+            }
         },
-        "required": ["id_produto", "nome", "preco"]
+        "required": ["idProduto", "nome", "preco"]
     }
 
     def on_get(self, req, resp):
         resp.media = self.db.get_produtos()
 
-    #verify
+    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
-        resp.media = self.db.add_produtos()
+        self.db.add_produtos(
+            resp.media.get("idProduto"),
+            resp.media.get("nomeProduto"),
+            resp.media.get("precoProduto"),
+            resp.media.get("qtdProduto")
+        )
 
 class Venda(Handler):
     desc = "Classe para manipulações na tabela Venda."
     usage = "GET retorna todas, POST cria uma, PUT atualiza uma"
     route = "/venda"
+    
     post_schema = {
         "type": "object",
         "title": "Inserção de venda via POST.",
         "description": "Informação de uma venda a ser adicionada.",
         "properties": {
-            "idVenda": {
+            "matricula": {
                 "type": "integer",
-                "description": "Identificação única da venda no banco de dados",
-                "length": 6
-            },
-            "dataVenda": {
-                "type": "date",
-                "description": "A data em que a venda ocorreu",
+                "description": "O id do colaborador associado à venda"
             },
             "valorTotal": {
                 "type": "money",
-                "description": "O valor total da venda",
+                "description": "O valor total da venda"
             },
-            "matricula": {
-                "type": "integer",
-                "description": "O id do colaborador associado à venda",
-            },
-        }
+            "idQtdProdutos": {
+                "type": "object",
+                "description": "JSON que associa cada idProduto à quantidade vendida"
+            }
+
+        },
         "required": ["idVenda, dataVenda, valorTotal, matricula"]
     }
     
     def on_get(self, req, resp):
         resp.media = self.db.get_vendas()
 
+    @jsonschema.validate(post_schema)
     def on_post(self, req, resp):
-        resp.media = self.db.add_vendas()
+        self.db.add_venda(
+            resp.media.get("matricula"),
+            resp.media.get("valorTotal"),
+            resp.media.get("idQtdProdutos")
+        )
     
     def on_put(self, req, resp):
-        resp.media = self.db.altera_venda()
-    #TODO: Deal with delete function
+        self.db.altera_venda(
+            resp.media.get("idVenda"),
+            resp.media.get("matriculaColaborador"),
+            resp.media.get("dataVenda"),
+            resp.media.get("valor"),
+            resp.media.get("quantidade"),
+        )
+
+    def on_delete(self, req, resp):
+        self.db.deleta_venda(
+            resp.media.get("idVenda")
+        )

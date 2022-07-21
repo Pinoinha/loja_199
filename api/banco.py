@@ -43,22 +43,22 @@ class Banco(object):
         
         return list(map(dict, c.fetchall()))
     
-     def add_colaborador(self, id_colaborador, nome_colaborador):
-        """Adiciona colaborador no banco de dados."""
-        c = self.conn.cursor()
+    def add_colaborador(self, idColaborador, nomeColaborador):
+       """Adiciona colaborador no banco de dados."""
+       c = self.conn.cursor()
 
-        if acha_duplicata_colaborador(id_colaborador):
-            raise Exception(f"Colaborador com id {id_colaborador} já existe.")
+       if acha_duplicata_colaborador(idColaborador):
+           raise Exception(f"Colaborador com id {idColaborador} já existe.")
 
-        c.execute(
-            """
-            INSERT INTO Colaborador (id_colaborador, nome_colaborador)
-            VALUES (%s, %s)
-            """,
-            (id_colaborador, nome_colaborador)
-        )
-        
-        self.conn.commit()
+       c.execute(
+           """
+           INSERT INTO Colaborador (idColaborador, nomeColaborador)
+           VALUES (%s, %s)
+           """,
+           (idColaborador, nomeColaborador)
+       )
+       
+       self.conn.commit()
 
     def get_vendas(self):
         """Lista as vendas da loja."""
@@ -89,35 +89,36 @@ class Banco(object):
         
         return c.fetchone()
 
-    def add_venda(self, matriculaColaborador, valor, quantidade, **idQtdProdutos):
+    def add_venda(self, matriculaColaborador, valorTotal, idQtdProdutos):
         c = self.conn.cursor()
         #TODO: Verify
         idVenda = str(uuid4())[:6] # idVenda foi definido como tendo tamanho máximo de 6 caracteres
         dataVenda = datetime.now(timezone(timedelta(hours=-3)))
         
         for idProduto, quantidade in idQtdProdutos.items():
+            ok = True
             if verifica_qtd(idProduto, quantidade) is not None:
                 # isso está errado! precisa verificar *todos* os itens antes
                 # TODO: consertar
-            	c.execute(
-                    """
-                    INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
-                    VALUES (%s, %s, %s)
-                    """,
-                    (idVenda, dataVenda, valor, matriculaColaborador)
-                )
+            	#c.execute(
+                #    """
+                #    INSERT INTO Venda (idVenda, dataVenda, valorTotal, matricula)
+                #    VALUES (%s, %s, %s)
+                #    """,
+                #    (idVenda, dataVenda, valorTotal, matriculaColaborador)
+                #)
                 
                self.conn.commit()
-               
-              else:
-                print(f"Não há {quantidade} de produtos com o id {idProduto} dísponíveis.")
+            else:
+                print(f"Não há {quantidade} produtos com o id {idProduto} dísponíveis.")
         
     def altera_venda(self, idVenda, matriculaColaborador, dataVenda, valor, quantidade):
         """Altera uma venda do banco de dados."""
         c = self.conn.cursor()
         
         c.execute(
-            """EDIT matriculaColaborador, dataVenda, valor, quantidade
+            """
+            EDIT matriculaColaborador, dataVenda, valor, quantidade
             FROM Venda
             WHERE idVenda = %s
             VALUES (%s, %s, %s, %s)
@@ -154,9 +155,9 @@ class Banco(object):
             (idProduto, quantidade)
         )
         
-        produto_existe = c.fetchall() is not None
+        produtoExiste = c.fetchall() is not None
 
-        if not produto_existe:
+        if not produtoExiste:
             raise ProgrammingError(f"Produto com id {idProduto} não encontrado.")
         
         return list(map(dict, c.fetchall()))
@@ -183,7 +184,7 @@ class Banco(object):
         c = self.conn.cursor()
 
         if acha_duplicata_produto(idProduto):
-            raise Exception(f"Produto com id {id_produto} já existe.")
+            raise Exception(f"Produto com id {idProduto} já existe.")
         
         c.execute(
             """
@@ -210,17 +211,17 @@ class Banco(object):
     
         return c.fetchone() is not None
     
-    def acha_duplicata_colaborador(self, id_colaborador):
+    def acha_duplicata_colaborador(self, idColaborador):
         """Encontra colaborador duplicado no banco de dados."""
         c = self.conn.cursor()
 
         c.execute(
             """
-            SELECT id_colaborador
+            SELECT idColaborador
             FROM Colaborador
-            WHERE id_colaborador = %s
+            WHERE idColaborador = %s
             """,
-            (id_colaborador,)
+            (idColaborador,)
         )
     
         return c.fetchone() is not None
