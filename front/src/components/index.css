@@ -1,0 +1,104 @@
+body {
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 0px;
+    background-color: #f9f9a9;
+  }
+  
+  ol, ul {
+    padding-left: 30px;
+  }
+  li a{
+    text-decoration:wavy;
+  }
+  .header-parent{
+
+  
+  width: 100vw;
+  display: flex;
+  left: 0;
+  right: 0;
+  justify-content: center;
+  height: 71px;
+  padding: 1em;
+  margin: 0 ;
+  background-color: #d9d9d9;
+  color: #e9f9e9;
+  }
+
+  .header{
+    background-color: #d9d9d9;
+  }
+  .header a{
+    text-decoration: none;
+  }
+  .header-logo{
+    background-color: #fa0707;
+    color: #fff;
+    width: 200%;
+    height: 50%;
+    padding-top: 50%;
+    text-align: center;
+    font-size: 64;
+  }
+ 
+  
+  .board-row:after {
+    clear: both;
+    content: "";
+    display: table;
+  }
+  
+  .status {
+    margin-bottom: 10px;
+  }
+  
+  .square {
+    background: #fff;
+    border: 1px solid #999;
+    float: left;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 34px;
+    height: 34px;
+    margin-right: -1px;
+    margin-top: -1px;
+    padding: 0;
+    text-align: center;
+    width: 34px;
+  }
+  
+  .square:focus {
+    outline: none;
+  }
+  
+  .kbd-navigation .square:focus {
+    background: #ddd;
+  }
+  
+  .page {
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .back-button{
+    background-color: #595959;
+    border: none;
+    color: #d9d9d9;
+    display: flex;
+    
+  }
+  .back-button a{
+    text-decoration: none;
+    color: #d9d9d9;
+  }
+
+  .hide{
+    display: none;
+  }
+  .show{
+    display: flex;
+  }
+  .game-info {
+    margin-left: 20px;
+  }
+  
